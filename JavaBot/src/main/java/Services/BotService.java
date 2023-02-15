@@ -18,6 +18,8 @@ public class BotService {
 
     private boolean first;
 
+    private boolean justFired;
+
     public BotService() {
         this.playerAction = new PlayerAction();
         this.gameState = new GameState();
@@ -31,6 +33,7 @@ public class BotService {
     public void setBot(GameObject bot) {
         this.bot = bot;
         this.first = true;
+        this.justFired = false;
         this.prevSize = bot.getSize();
     }
 
@@ -59,18 +62,20 @@ public class BotService {
         if (!gameState.getGameObjects().isEmpty()) {
 
             System.out.println("calculating...");
-            if(first || !isLastTargetActive(prevTarget)) {
-                first = false;
-//                playerAction = gotoBestFoodHorde(playerAction);
-                prevTarget = getBestFoodHorde();
+
+            if(justFired){
+                playerAction.action = PlayerActions.FORWARD;
                 playerAction.heading = getHeadingBetween(prevTarget);
-                System.out.println(getDistanceBetween(bot,prevTarget));
-                System.out.println("heading to food.");
-                prevSize = bot.getSize();
+
+                justFired = false;
+            } else {
+                playerAction = farmingMethod(playerAction);
+                playerAction = deathUponYou(playerAction);
             }
-            System.out.println(prevSize);
 
             System.out.println("Done!");
+
+            first = false;
         }
 
         this.playerAction = playerAction;
@@ -78,36 +83,34 @@ public class BotService {
 
     //*********************************************
 
+    public PlayerAction farmingMethod(PlayerAction playerAction) {
+        if(first || prevSize != bot.getSize()) {
+//                playerAction = gotoBestFoodHorde(playerAction);
+            prevTarget = getBestFoodHorde();
 
-    public boolean isLastTargetActive(GameObject gameObject){
-        var temp = gameState.getGameObjects().stream().filter(item -> item.getGameObjectType() == ObjectTypes.FOOD)
-                .collect(Collectors.toList());
-        for(int i = 0; i < temp.size(); i++) {
-            if(gameObject.getId() == temp.get(i).getId()) {
-                return true;
-            }
+            playerAction.action = PlayerActions.FORWARD;
+            playerAction.heading = getHeadingBetween(prevTarget);
+
+            System.out.println(getDistanceBetween(bot,prevTarget));
+            System.out.println("heading to food.");
+            System.out.println(prevSize);
+
+            prevSize = bot.getSize();
         }
-        System.out.println(false);
-        return false;
-    }
 
 
-    public PlayerAction gotoNearShip(PlayerAction playerAction) {
-
-        playerAction.heading = getHeadingBetween(getNearestShip());
-
-        return playerAction;
-    }
-    public PlayerAction gotoNearFood(PlayerAction playerAction) {
-
-        playerAction.heading = getHeadingBetween(getNearestFood());
 
         return playerAction;
     }
 
-    public PlayerAction gotoBestFoodHorde(PlayerAction playerAction) {
+    public PlayerAction deathUponYou(PlayerAction playerAction) {
+        GameObject bestPrey = getBestPrey();
+        if(bestPrey != this.bot && this.bot.getSize() - bestPrey.getSize() > 5){
+            playerAction.heading = getHeadingBetween(bestPrey);
+            playerAction.action = PlayerActions.FIRETORPEDOES;
+        }
 
-        playerAction.heading = getHeadingBetween(getBestFoodHorde());
+        justFired = true;
 
         return playerAction;
     }
@@ -124,14 +127,15 @@ public class BotService {
 
     public GameObject getBestFoodHorde(){
         var foodList = gameState.getGameObjects()
-                .stream().filter(item -> item.getGameObjectType() == ObjectTypes.FOOD)
+                .stream().filter(item -> item.getGameObjectType() == ObjectTypes.FOOD
+                        || item.getGameObjectType() == ObjectTypes.SUPERFOOD)
                 .sorted(Comparator
                         .comparing(item -> getDistanceBetween(bot, item)))
                 .collect(Collectors.toList());
 
         List<Map.Entry<GameObject, Double>> bestFoodList = new ArrayList<>();
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 30; i++) {
             GameObject currentFood = foodList.get(i);
 
             var temp = gameState.getGameObjects()
@@ -144,11 +148,17 @@ public class BotService {
 
             for (int j = 0; j < 20; j++) {
                 double distances = getDistanceBetween(currentFood, temp.get(j));
-                oneOverDistances += Math.pow(distances,-2);
+                oneOverDistances += Math.pow(distances,-2) * 1000000;
             }
 
-            bestFoodList.add(new AbstractMap.SimpleEntry<>(currentFood,
-                    oneOverDistances * Math.pow(getDistanceBetween(currentFood,bot),-2)));
+            if(currentFood.getGameObjectType() == ObjectTypes.SUPERFOOD) {
+                bestFoodList.add(new AbstractMap.SimpleEntry<>(currentFood,
+                        oneOverDistances * Math.pow(getDistanceBetween(currentFood, bot), -1.05)
+                        * 10));
+            } else {
+                bestFoodList.add(new AbstractMap.SimpleEntry<>(currentFood,
+                        oneOverDistances * Math.pow(getDistanceBetween(currentFood, bot), -1.05)));
+            }
         }
 
         var bestFood = bestFoodList.get(0);
@@ -162,6 +172,15 @@ public class BotService {
         return bestFood.getKey();
     }
 
+    public GameObject getBestPrey(){
+        GameObject bestPrey = getNearestShip();
+        double bestPreyDistance = getHeadingBetween(bestPrey);
+        if(bestPreyDistance < bestPreyDistance * 60 / bestPrey.getSpeed()){
+            return bestPrey;
+        } else {
+            return this.bot;
+        }
+    }
     public GameObject getNearestShip(){
 
         var shipList = gameState.getPlayerGameObjects()
