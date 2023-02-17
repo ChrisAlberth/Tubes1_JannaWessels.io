@@ -62,7 +62,17 @@ public class BotService {
                 justFired = false;
             }
             else {
+                playerAction = devilSurvivor(playerAction);
                 playerAction = deathUponYou(playerAction);
+                playerAction = greedyArentYou(playerAction);
+            }
+
+            if (gameState.getWorld().getCurrentTick() == 10 && bot.getSize() >= 15) {
+                playerAction.action = PlayerActions.STARTAFTERBURNER;
+            }
+
+            if (gameState.getWorld().getCurrentTick() == 30) {
+                playerAction.action = PlayerActions.STOPAFTERBURNER;
             }
 
             double distanceFromCentre = getDistanceBetween(bot, new GameObject());
@@ -79,7 +89,7 @@ public class BotService {
     public PlayerAction devilSurvivor(PlayerAction playerAction){
         if (first || prevSize != this.bot.getSize()){
             int area = BestHeading();
-            playerAction.heading = getBestFoodHorde(area);
+            playerAction.heading = searchHeadInArea(area);
             playerAction.action = PlayerActions.FORWARD;
             prevSize = this.bot.getSize();
         }
@@ -136,7 +146,13 @@ public class BotService {
 //    }
     private Integer BestHeading() {
         var possibleCollision = gameState.getGameObjects()
-                .stream().filter(obj -> getDistanceBetween(bot, obj) < bot.getSize() * 2.5 + bot.getSpeed() + 60)
+                .stream().filter(obj -> getDistanceBetween(bot, obj) < bot.getSize() * 2.5 + bot.getSpeed() + 100)
+                .sorted(Comparator
+                        .comparing(obj -> getDistanceBetween(bot, obj)))
+                .collect(Collectors.toList());
+
+        var possibleEnemy = gameState.getPlayerGameObjects()
+                .stream().filter(obj -> getDistanceBetween(bot, obj) < bot.getSize() * 2.5 + bot.getSpeed() + 100)
                 .sorted(Comparator
                         .comparing(obj -> getDistanceBetween(bot, obj)))
                 .collect(Collectors.toList());
@@ -147,11 +163,12 @@ public class BotService {
             int minHead = i*30;
             int maxHead = minHead + 29;
 
+            int headWeight = 0;
+
             var objectInDirection = possibleCollision
                     .stream().filter(oid -> getHeadingBetween(oid) >= minHead && getHeadingBetween(oid) <= maxHead)
                     .collect(Collectors.toList());
 
-            int headWeight = 0;
             int nObject = objectInDirection.size();
 
             for (int j = 0; j < nObject; j++) {
@@ -175,15 +192,36 @@ public class BotService {
                     headWeight += -10;
                 }
                 else if (type == ObjectTypes.FOOD) {
-                    headWeight += 5;
+                    headWeight += 10;
                 }
                 else if (type == ObjectTypes.SUPERFOOD) {
-                    headWeight += 6;
+                    headWeight += 10;
                 }
                 else headWeight += 1;
             }
 
-            headingValue.add(new AbstractMap.SimpleEntry<>(i, headWeight));
+            var playerInDirection = possibleEnemy
+                    .stream().filter(oid -> getHeadingBetween(oid) >= minHead && getHeadingBetween(oid) <= maxHead)
+                    .collect(Collectors.toList());
+
+            int nPlayer = playerInDirection.size();
+
+            for (int l = 0; l < nPlayer; l++) {
+                Integer size = playerInDirection.get(l).getSize();
+                if (size > bot.getSize() * 2) {
+                    headWeight += -10;
+                } else if (size > bot.getSize() * 1.5 && size <= bot.getSize() * 2) {
+                    headWeight += -5;
+                } else if (size >= bot.getSize() && size <= bot.getSize() * 1.5) {
+                    headWeight += -2;
+                } else if (size < bot.getSize()) {
+                    headWeight += 5;
+                } else {
+                    headWeight += 1;
+                }
+            }
+
+                headingValue.add(new AbstractMap.SimpleEntry<>(i, headWeight));
         }
 
         int bestArea = 0;
@@ -298,9 +336,8 @@ public class BotService {
         double distance = getDistanceBetween(bestPrey, this.bot);
 
 
-
         if(bestPrey != this.bot && (this.bot.getSize() - bestPrey.getSize() > 5 ||
-                this.bot.getSize() - bestPrey.getSize() > -60 && distance < 70)){
+                bestPrey.getSize() > this.bot.getSize() && distance < 200)){
 
             if(normalShot){
                 playerAction.heading = getHeadingBetween(bestPrey);
@@ -344,7 +381,7 @@ public class BotService {
     public GameObject getUrgentPrey(){
         GameObject bestPrey = getNearestShip();
         double bestPreyDistance = getHeadingBetween(bestPrey);
-        if(bestPreyDistance - this.bot.getSize() < Math.pow(bestPreyDistance,0.5) * 60 / bestPrey.getSpeed()){
+        if(bestPreyDistance - this.bot.getSize() < bestPreyDistance * 60 / bestPrey.getSpeed()){
             return bestPrey;
         } else {
             return this.bot;
@@ -373,7 +410,7 @@ public class BotService {
 
         GameObject bestPrey = getSpamablePrey();
 
-        if(bestPrey.getSpeed() < avgSpd * 3 / 2 && this.bot.getSize() > 30) {
+        if(bestPrey.getSize() > this.bot.getSize() && this.bot.getSize() > 16) {
             if(normalShot){
                 playerAction.heading = getHeadingBetween(bestPrey);
                 normalShot = false;
@@ -392,6 +429,37 @@ public class BotService {
 
         return playerAction;
     }
+
+    public PlayerAction dangerousObject(PlayerAction playerAction) {
+        var dangerObject = gameState.getGameObjects()
+                .stream().filter(object -> object.getGameObjectType() == ObjectTypes.TORPEDOSALVO ||
+                        object.getGameObjectType() == ObjectTypes.SUPERNOVABOMB ||
+                        object.getGameObjectType() == ObjectTypes.TELEPORTER ||
+                        object.getGameObjectType() == ObjectTypes.PLAYER)
+                .sorted(Comparator.comparing(object -> getDistanceBetween(bot, object)))
+                .collect(Collectors.toList());
+
+        var dangerPlayer = gameState.getPlayerGameObjects()
+                .stream().filter(object -> object.getSize() > bot.getSize() * 0.75)
+                .sorted(Comparator.comparing(object -> getDistanceBetween(bot, object)))
+                .collect(Collectors.toList());
+
+        double objectDistance = getDistanceBetween(bot, dangerObject.get(0));
+        double playerDistance = getDistanceBetween(bot, dangerPlayer.get(0));
+
+        playerAction.action = PlayerActions.STARTAFTERBURNER;
+        if (objectDistance < playerDistance) {
+            playerAction.heading = getHeadingBetween(dangerObject.get(0)) + 90;
+        }
+        else if (objectDistance == playerDistance) {
+            playerAction.heading = (getHeadingBetween(dangerObject.get(0)) + getHeadingBetween(dangerPlayer.get(0))) / 2 + 180;
+        }
+        else playerAction.heading = getHeadingBetween(dangerPlayer.get(0)) + 90;
+
+        return playerAction;
+    }
+
+
 //    private GameObject NearestObject() {
 //        var objectList = gameState.getGameObjects()
 //                .stream().sorted(Comparator
