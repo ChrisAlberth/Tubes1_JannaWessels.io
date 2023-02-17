@@ -12,7 +12,7 @@ Tugas Besar 1 Strategi Algoritma 2023
 - https://github.com/EntelectChallenge/2021-Galaxio/releases/tag/2021.3.2
 
 ## Cara Build Program
-1. Change Directory ke `../Tubes1_JannaWessels.io/UNtouchable`
+1. Change Directory ke `../Tubes1_JannaWessels.io/Untouchable`
 2. Jalankan perintah `mvn clean package`
 3. Akan muncul folder target pada directory tersebut, folder target berisi file .jar
 
