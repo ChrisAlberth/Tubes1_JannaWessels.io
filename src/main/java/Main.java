@@ -58,7 +58,7 @@ public class Main {
 
         Thread.sleep(1000);
         System.out.println("Registering with the runner...");
-        hubConnection.send("Register", token, "Bot 1");
+        hubConnection.send("Register", token, "Untouchable");
 
         //This is a blocking call
         hubConnection.start().subscribe(() -> {
