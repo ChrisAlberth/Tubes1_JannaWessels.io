@@ -27,6 +27,6 @@ Tugas Besar 1 Strategi Algoritma 2023
 8. Permainan akan berlangsung sampai selesai. Setelah selesai, akan terbuat dua file json yang berisi kronologi match.
 
 ## Identitas Pembuat
-Ezra M C M H - 13521073 - K1
-Christian Albert Hasiholan - 13521078 -K2
-Tobias Natalio Sianipar - 13521090 - K2
+> Ezra M C M H - 13521073 - K1
+> Christian Albert Hasiholan - 13521078 -K2
+> Tobias Natalio Sianipar - 13521090 - K2
