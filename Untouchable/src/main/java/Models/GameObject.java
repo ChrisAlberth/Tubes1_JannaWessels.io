@@ -16,6 +16,19 @@ public class GameObject {
   public Integer teleporterCount;
   public Integer shieldCount;
 
+  public GameObject() {
+    this.id = new UUID(0,0);
+    this.size = 0;
+    this.speed = 0;
+    this.currentHeading = 0;
+    this.position = new Position(0, 0);
+    this.gameObjectType = ObjectTypes.valueOf(0);
+    this.effects = 0;
+    this.torpedoSalvoCount = 0;
+    this.supernovaAvailable = 0;
+    this.teleporterCount = 0;
+    this.shieldCount = 0;
+  }
   public GameObject(UUID id, Integer size, Integer speed, Integer currentHeading, Position position, ObjectTypes gameObjectType) {
     this.id = id;
     this.size = size;

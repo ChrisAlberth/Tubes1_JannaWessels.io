@@ -1,6 +1,7 @@
 package Enums;
 
 public enum ObjectTypes {
+  IRFAN(0),
   PLAYER(1),
   FOOD(2),
   WORMHOLE(3),

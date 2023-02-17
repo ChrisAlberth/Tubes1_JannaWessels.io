@@ -72,14 +72,14 @@ public class BotService {
                 playerAction.action = PlayerActions.FORWARD;
                 playerAction.heading = getHeadingBetween(prevTarget);
 
-                playerAction = didntSeeThatComing(playerAction);
+//                playerAction = didntSeeThatComing(playerAction);
 
                 justFired = false;
             } else {
                 playerAction = farmingMethod(playerAction);
                 playerAction = greedyArentYou(playerAction);
                 playerAction = deathUponYou(playerAction);
-                playerAction = ambulanceNotForMe(playerAction);
+//                playerAction = ambulanceNotForMe(playerAction);
 
             }
 
@@ -155,7 +155,7 @@ public class BotService {
 
         GameObject bestPrey = getSpamablePrey();
 
-        if(bestPrey.getSpeed() < avgSpd * 3 / 4 && this.bot.getSize() > 30) {
+        if(bestPrey.getSpeed() < avgSpd * 3 / 2 && this.bot.getSize() > 30) {
             if(normalShot){
                 playerAction.heading = getHeadingBetween(bestPrey);
                 normalShot = false;
