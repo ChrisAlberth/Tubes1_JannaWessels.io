@@ -3,6 +3,10 @@ Tugas Besar 1 Strategi Algoritma 2023
 
 > Tugas besar ini adalah contoh penerapan metode greedy pada game galaxio. Metode greedy merupakan salah satu cara atau teknik merancang suatu algoritma. Metode Greedy digunakan untuk mendapatkan solusi optimal dari suatu permasalahan. Pada tugas ini kami menggunakan greedy yang merubah objek menjadi suatu nilai matematis yang kemudian dapat diakumulasi menjadi bobot penentu langkah bot.
 
+## Folder Bot
+- JavaBot
+- Untouchable
+
 ## Program Requirement
 - IntelliJ IDEA 2022.3.2
 - apache-maven-3.9.0
@@ -25,6 +29,12 @@ Tugas Besar 1 Strategi Algoritma 2023
 6. Bot yang terkoneksi akan mendengarkan event-event dari runner. Salah satu event yang paling penting adalah RecieveGameState karena memberikan status game.
 7. Bot juga mengirim event kepada runner yang berisi aksi bot.
 8. Permainan akan berlangsung sampai selesai. Setelah selesai, akan terbuat dua file json yang berisi kronologi match.
+
+## Cara Connect Bot
+Bot yang akan diconnect dari file .jar
+1. Jalankan program seperti di atas sampai langkah 4
+2. Buka terminal
+3. Jalankan perintah 'java -jar path' dengan path merujuk pada file .jar yang akan dimainkan
 
 ## Identitas Pembuat
 - Ezra M C M H - 13521073 - K1
